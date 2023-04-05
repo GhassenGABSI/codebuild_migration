@@ -1,0 +1,17 @@
+version: 0.2
+env: 
+  secrets-manager:
+    DB_DATABASE:              ${DB_SECRETS_ARN}:dbname 
+    DB_USERNAME:              ${DB_SECRETS_ARN}:username
+    DB_PASSWORD:              ${DB_SECRETS_ARN}:password
+    DB_HOSTNAME:              ${DB_SECRETS_ARN}:host
+    DB_PORT:                  ${DB_SECRETS_ARN}:port
+phases:
+  install:
+    runtime-versions:
+      java: corretto17
+  build:
+    commands:
+      - wget -qO- https://repo1.maven.org/maven2/org/flywaydb/flyway-commandline/9.11.0/flyway-commandline-9.11.0-linux-x64.tar.gz | tar xvz && ln -s `pwd`/flyway-9.11.0/flyway /usr/local/bin
+      - cd rds-flyway-migrations/flyway
+      - flyway migrate -locations=filesystem:migrations/**/*.sql -password=$DB_PASSWORD -user=$DB_USERNAME -url=jdbc:postgresql://$DB_HOSTNAME:$DB_PORT/$DB_DATABASE -connectRetries=300 -X
